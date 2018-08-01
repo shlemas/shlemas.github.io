@@ -1,0 +1,15 @@
+---
+layout: post
+title:  "git diff -M100%"
+date:   2018-07-31 21:31:00 -0500
+categories: blog
+---
+I typically use a Git pre-commit hook to run transformations on files being added or modified in a commit; e.g., running a code formatter such as astyle. In the past, I would retrieve the list of added and modified files with the following command:
+
+    git diff --cached --name-only --diff-filter=AM
+
+This is pretty good. The filter at the end makes sure we only process files that were added or modified. But there is a problem: this will not always report files that were modified *and* renamed. Surprisingly or not, if Git detects that a file has been both modified and renamed, it will report the file as "renamed". One way to solve this is to add `R` to the filter list and process *all* renamed files, even those that were otherwise unmodified, but this too is less than ideal for some use cases. A better option is to control Git's heuristic for detecting renames via the `-M` flag:
+
+    git diff --cached --name-only --diff-filter=AM -M100%
+
+Git heuristically detects renames by comparing file content. By default, if Git detects that a file has been deleted and a new file has been added, and the files are 50% identical, then Git will consider it a rename. This is equivalent to calling `git diff` with `-M50%`. By instead calling the command with `-M100%`, we tell Git to only consider a file to be renamed if and only if it was strictly moved and not modified. By doing this, we ensure modified files no longer sneak by the pre-commit hook as renamed files.
